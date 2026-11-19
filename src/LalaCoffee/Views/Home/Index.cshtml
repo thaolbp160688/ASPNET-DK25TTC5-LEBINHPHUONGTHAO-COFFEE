@@ -1,0 +1,183 @@
+
+@{
+    Page.Title = "Home Page";
+    ViewBag.IsHomePage = true;
+    Layout = "~/Views/Shared/_Layout_User.cshtml";
+}
+
+@model IEnumerable<LalaCoffee.Models.Product>
+<main>
+    <div class="main-part">
+
+        <link href="~/Content/Layout/User/css/lala-home.css?v=2.2" rel="stylesheet" />
+
+        <section class="lala-hero">
+            <div class="lala-hero__bg"></div>
+            <div class="lala-hero__overlay"></div>
+            <div class="lala-hero__content">
+                <div class="lala-hero__tagline">LalaCoffee</div>
+                <h1 class="lala-hero__title">
+                    Một ly hợp gu,<br>một ngày thêm vui.
+                </h1>
+                <p class="lala-hero__subtitle">
+                    Khám phá cà phê, trà và bánh tại LalaCoffee.
+                </p>
+                <a href="/Collections/All" class="lala-hero__cta">Xem menu</a>
+            </div>
+        </section>
+
+        <section class="lala-categories">
+            <div class="container">
+                <div class="lala-section-title">
+                    <h2>Chọn theo gu</h2>
+                    <p>Bạn thích gì hôm nay?</p>
+                </div>
+                <div class="lala-cat-grid">
+                    <a href="/Collections/ca-phe-truyen-thong" class="lala-cat-card">
+                        <img src="@Url.Content("~/Content/Layout/User/images/coffee.png")" alt="Cà phê">
+                        <h5>Cà phê</h5>
+                        <p>Đậm đà bản sắc</p>
+                    </a>
+                    <a href="/Collections/tra-trai-cay" class="lala-cat-card">
+                        <img src="@Url.Content("~/Content/Layout/User/images/bewerages.png")" alt="Trà trái cây">
+                        <h5>Trà trái cây</h5>
+                        <p>Tươi mát mỗi ngày</p>
+                    </a>
+                    <a href="/Collections/tra-sua-da-xay" class="lala-cat-card">
+                        <img src="@Url.Content("~/Content/Layout/User/images/cocktail.png")" alt="Trà sữa & đá xay">
+                        <h5>Trà sữa & đá xay</h5>
+                        <p>Thơm ngậy mát lạnh</p>
+                    </a>
+                    <a href="/Collections/banh-mi-trang-mieng" class="lala-cat-card">
+                        <img src="@Url.Content("~/Content/Layout/User/images/cake.png")" alt="Bánh">
+                        <h5>Bánh</h5>
+                        <p>Giòn ngon hấp dẫn</p>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        @{
+            var featured = ViewBag.FeaturedProducts as List<LalaCoffee.Models.Product>;
+            var flavorMap = new Dictionary<string, string>
+            {
+                { "Cà Phê Đen Đá", "Đắng mạnh, hậu ngọt thanh." },
+                { "Cà Phê Sữa Đá", "Ngọt béo hài hòa, quen mà mê." },
+                { "Bạc Xỉu Lala", "Béo vị sữa, nhẹ vị cà phê." },
+                { "Latte Đá", "Sữa tươi mịn màng, cà phê thơm nhẹ." },
+                { "Caramel Macchiato", "Ngọt caramel, thơm vani quyến rũ." },
+                { "Cold Brew Sữa Tươi", "Ủ lạnh 16h, thanh mát cả ngày." },
+                { "Trà Đào Cam Sả", "Chua thanh, ngọt đào, thơm sả." },
+                { "Trà Sữa Oolong Nướng Trân Châu", "Trà nướng đậm, sữa ngậy, trân châu dai." },
+                { "Croissant Trứng Muối", "Ngàn lớp giòn xốp, sốt trứng muối tan chảy." },
+                { "Chocolate Đá", "Cacao đậm, sữa béo, ngọt ngào." }
+            };
+        }
+        <section class="lala-featured">
+            <div class="container">
+                <div class="lala-section-title">
+                    <h2>Hôm nay uống gì?</h2>
+                    <p>Lala gợi ý cho bạn</p>
+                </div>
+                @if (featured != null && featured.Any())
+                {
+                    <div class="lala-featured-grid">
+                        @foreach (var item in featured)
+                        {
+                            var flavor = flavorMap.ContainsKey(item.Name) ? flavorMap[item.Name] : item.Description;
+                            if (flavor != null && flavor.Length > 60)
+                            {
+                                flavor = flavor.Substring(0, 57) + "...";
+                            }
+                            <a href="/Product/@item.Slug" class="lala-featured-card">
+                                <div class="lala-featured-card__img">
+                                    <img src="@item.Image" alt="@item.Name" loading="lazy">
+                                    <span class="lala-featured-card__badge">Lala gợi ý</span>
+                                </div>
+                                <div class="lala-featured-card__body">
+                                    <div class="lala-featured-card__name">@item.Name</div>
+                                    <div class="lala-featured-card__desc">@flavor</div>
+                                    <div class="lala-featured-card__price">@item.Price.ToString("N0")đ</div>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
+        </section>
+
+        <section class="lala-visit">
+            <div class="container">
+                <div class="lala-section-title">
+                    <h2>Ghé Lala, ngồi lại một chút</h2>
+                </div>
+                <div class="lala-visit-inner">
+                    <div class="lala-visit__map">
+                        <iframe src="https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d692.666522859533!2d106.80542313721728!3d10.863738203048896!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zMTDCsDUxJzQ4LjkiTiAxMDbCsDQ4JzIwLjQiRQ!5e0!3m2!1svi!2s!4v1680446972833!5m2!1svi!2s"
+                                allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+                                title="Bản đồ LalaCoffee"></iframe>
+                    </div>
+                    <div class="lala-visit__info">
+                        <h3>☕ LalaCoffee — Chi nhánh chính</h3>
+                        <div class="lala-visit__detail">
+                            <i class="fa fa-map-marker"></i>
+                            <span>783 Võ Văn Kiệt, Phường Chợ Quán, TPHCM</span>
+                        </div>
+                        <div class="lala-visit__detail">
+                            <i class="fa fa-clock-o"></i>
+                            <span>07:00 – 22:30 · Mở cửa mỗi ngày</span>
+                        </div>
+                        <div class="lala-visit__detail">
+                            <i class="fa fa-phone"></i>
+                            <span><a href="tel:0888888888" style="color:inherit">08 8888 8888</a></span>
+                        </div>
+                        <a href="https://maps.google.com/?q=10.863738,106.805423"
+                           target="_blank" rel="noopener" class="lala-visit__cta">
+                            <i class="fa fa-location-arrow"></i> Chỉ đường
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        @{
+            var blogs = ViewBag.Blogs as List<LalaCoffee.Models.Blog>;
+        }
+        @if (blogs != null && blogs.Any())
+        {
+            <section class="lala-blog default-section bg-grey">
+                <div class="container">
+                    <div class="lala-section-title">
+                        <h2 class="text-coffee">Blog</h2>
+                    </div>
+                    <div class="feature-blog">
+                        <div class="owl-carousel owl-theme" data-items="3" data-tablet="2" data-mobile="1"
+                             data-nav="true" data-dots="false" data-autoplay="true" data-speed="2500"
+                             data-autotime="6000">
+                            @foreach (var blog in blogs)
+                            {
+                                <div class="item dp-animation">
+                                    <div class="feature-img">
+                                        <a href="/Blog/ReadMore/@blog.Id">
+                                            <img src="@blog.Image" alt="@blog.Title" class="animated">
+                                        </a>
+                                        <div class="date-feature">
+                                            @blog.CreatedDate.ToString("dd") <br> <small>thg @blog.CreatedDate.ToString("MM")</small>
+                                        </div>
+                                    </div>
+                                    <div class="feature-info">
+                                        <span><i class="fa fa-clock-o"></i> @blog.CreatedDate.ToString("dd/MM/yyyy")</span>
+                                        <h5>@blog.Title</h5>
+                                        <p>@Html.Raw(blog.Content.Substring(0, Math.Min(blog.Content.Length, 120)))...</p>
+                                        <a href="/Blog/ReadMore/@blog.Id">Xem Thêm <i class="icon-right-4"></i></a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </section>
+        }
+
+    </div>
+</main>
