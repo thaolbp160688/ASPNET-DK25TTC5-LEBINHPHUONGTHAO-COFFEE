@@ -1,0 +1,81 @@
+@model IEnumerable<LalaCoffee.Models.Product>
+
+@{
+    Page.Title = "Thực đơn món";
+    Layout = "~/Views/Shared/_Layout_User.cshtml";
+}
+
+<main>
+    <div class="main-part">
+        <section class="breadcrumb-nav">
+            <div class="container">
+                <div class="breadcrumb-nav-inner text-center">
+                    <label class="now">THỰC ĐƠN LALACOFFEE</label>
+                </div>
+            </div>
+        </section>
+
+        <section class="default-section shop-page">
+            <div class="container">
+                <div class="row">
+                    <!-- Sidebar -->
+                    <div class="col-lg-3 col-md-4 col-12 mb-4">
+                        <div class="blog-left-section">
+                            <form method="get" action="/Collections/All" class="blog-left-search blog-common-wide mb-4">
+                                <input type="text" name="search" placeholder="Tìm kiếm món..." aria-label="Tìm kiếm món">
+                                <input type="submit" value="&#xf002;" aria-label="Tìm kiếm" title="Tìm kiếm">
+                            </form>
+                            <div class="blog-left-categories blog-common-wide">
+                                <h5>DANH MỤC</h5>
+                                <ul class="list">
+                                    <li><a href="/Collections/All" class="fw-bold">Tất cả sản phẩm</a></li>
+                                    @if (ViewBag.Categories != null)
+                                    {
+                                        foreach (var category in ViewBag.Categories)
+                                        {
+                                            <li><a href="/Collections/@category.Slug">@category.Name</a></li>
+                                        }
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Danh sách sản phẩm -->
+                    <div class="col-lg-9 col-md-8 col-12">
+                        <div class="shop-product-header d-flex justify-content-between align-items-center mb-4">
+                            <h3 class="block_menu_item_title m-0">
+                                <span class="section_heading" style="color: #8b572a; font-weight: 700;">Tất cả món</span>
+                            </h3>
+                            <span class="text-muted small">Hiển thị @Model.Count() món</span>
+                        </div>
+
+                        <div class="row g-4">
+                            @foreach (var item in Model)
+                            {
+                                <div class="col-lg-4 col-md-6 col-sm-6 col-12">
+                                    <div class="shop-main-list card h-100 border-0 shadow-sm rounded-3 overflow-hidden text-center p-3">
+                                        <div class="shop-product mb-3 overflow-hidden rounded-2">
+                                            <a href="~/Product/@item.Slug" class="d-block">
+                                                <img src="@item.Image" alt="@item.Name" loading="lazy" class="img-fluid" style="width: 100%; height: 220px; object-fit: cover; transition: transform 0.3s ease;">
+                                            </a>
+                                        </div>
+                                        <h5 class="mb-2">
+                                            <a href="~/Product/@item.Slug" class="text-decoration-none text-dark fw-bold">@item.Name</a>
+                                        </h5>
+                                        <div class="mb-3">
+                                            <strong style="color: #8b572a; font-size: 17px;">@item.Price.ToString("N0")đ</strong>
+                                        </div>
+                                        <div class="mt-auto">
+                                            <a href="~/Product/@item.Slug" class="btn btn-outline-dark btn-sm rounded-pill px-3">Xem chi tiết</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>

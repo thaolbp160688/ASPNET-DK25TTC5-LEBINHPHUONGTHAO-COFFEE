@@ -1,0 +1,231 @@
+@model List<LalaCoffee.Models.CartItem>
+@{
+    ViewBag.Title = "Cart";
+    Layout = "~/Views/Shared/_Layout_User.cshtml";
+}
+
+<script>
+    $(function () {
+                $('.remove').on('click', function () {
+                    if (cartUpdating) return;
+                    var cartItemId = $(this).data('item-cart-id');
+                    $.ajax({
+                        url: '@Url.Action("RemoveFromCart", "Cart")',
+                        type: 'POST',
+                        data: { cartItemId: cartItemId },
+                        success: function (result) {
+                            if (result.success) {
+                                location.reload();
+                            }
+                        }
+                    });
+                });
+
+                $('.clear').on('click', function (event) {
+                    event.preventDefault();
+                    if (cartUpdating) return;
+                    $.ajax({
+                        url: '@Url.Action("ClearCart", "Cart")',
+                        type: 'POST',
+                        success: function (result) {
+                            if (result.success) {
+                                location.reload();
+                            }
+                        }
+                    });
+                });
+            });
+</script> 
+
+<main>
+    <div class="main-part">
+
+            <section class="default-section shop-cart bg-grey">
+                <div class="container">
+                    <div class="checkout-wrap wow fadeInDown" data-wow-duration="1000ms" data-wow-delay="300ms">
+                        <ul class="checkout-bar">
+                            <li class="active">Giỏ hàng</li>
+                            <li>Thanh toán</li>
+                            <li>Hoàn thành</li>
+                        </ul>
+                    </div>
+                    @if (Model.Count == 0)
+                    {
+                        <div class="text-center">
+                            <p>Giỏ hàng của bạn chưa có sản phẩm.</p>
+                            <a href="/Collections/All" class="btn-primary-gold btn-medium">Tiếp tục mua sắm</a>
+                        </div>
+                    }
+                    else
+                    {
+                    <p id="cart-update-error" role="alert" class="text-danger"></p>
+                    <div class="shop-cart-list wow fadeInDown" data-wow-duration="1000ms" data-wow-delay="600ms">
+                        <table class="shop-cart-table">
+                            <thead>
+                                <tr>
+                                    <th>SẢN PHẨM</th>
+                                    <th>GIÁ</th>
+                                    <th>SỐ LƯỢNG</th>
+                                    <th>TỔNG</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+
+                                @foreach (var item in Model)
+                                {
+                                    <tr>
+                                        <th>SẢN PHẨM</th>
+                                        <td>
+                                            <div class="product-cart-title">
+                                                <span>@item.ProductName</span><br />
+                                                @{
+                                                    List<int> optionIds = new List<int>();
+                                                }
+                                                @if (item.PropertyProduct != null)
+                                                {
+                                                    <div style="font-size: 13px; color: #666; margin-top: 3px;">
+                                                        <span>Size: <strong>@item.PropertyProduct.Name</strong>@(item.PropertyProduct.Price > 0 ? $" (+{item.PropertyProduct.Price:N0}đ)" : "")</span>
+                                                    </div>
+                                                }
+                                                @if (item.Options != null && item.Options.Any())
+                                                {
+                                                    <div style="font-size: 12px; color: #777; margin-top: 5px;">
+                                                        <span style="font-weight: 600; color: #555;">Topping:</span>
+                                                        <ul style="list-style: none; padding-left: 0; margin-bottom: 0; margin-top: 2px;">
+                                                            @foreach (var option in item.Options)
+                                                            {
+                                                                <li style="padding-left: 12px; position: relative; margin-bottom: 2px;">
+                                                                    <span style="position: absolute; left: 0; color: #c66d55; font-weight: bold;">+</span>
+                                                                    <span>@option.Name</span>
+                                                                    <span style="color: #c66d55; font-weight: 500;">(@option.Price.ToString("N0")đ)</span>
+                                                                </li>
+                                                            }
+                                                        </ul>
+                                                    </div>
+                                                }
+
+                                            </div>
+                                        </td>
+                                        <th>GIÁ</th>
+                                        <td>
+                                            @{
+                                                var propPrice = item.PropertyProduct != null ? item.PropertyProduct.Price : 0m;
+                                                var optionsPrice = item.Options != null ? item.Options.Sum(option => option.Price) : 0m;
+                                                var unitPrice = item.Price + propPrice + optionsPrice;
+                                            }
+                                            <strong>@unitPrice.ToString("N0")đ</strong>
+                                            @if (unitPrice != item.Price)
+                                            {
+                                                <span style="display: block; font-size: 11px; color: #888; font-weight: normal;">(Gốc: @item.Price.ToString("N0")đ)</span>
+                                            }
+                                        </td>
+                                        <th>SỐ LƯỢNG</th>
+                                        <td>
+                                            <div class="price-textbox">
+                                                <button type="button" class="minus-text" onclick="minusQuantity('@item.Id')" aria-label="Giảm số lượng @item.ProductName"><i class="fa fa-minus" aria-hidden="true"></i></button>
+                                                <input type="text" inputmode="numeric" id="quantity_@item.Id" value="@item.Quantity" data-quantity="@item.Quantity" onchange="updateCart('@item.Id')" pattern="[0-9]+" aria-label="Số lượng @item.ProductName">
+                                                <button type="button" class="plus-text" onclick="plusQuantity('@item.Id')" aria-label="Tăng số lượng @item.ProductName"><i class="fa fa-plus" aria-hidden="true"></i></button>
+                                            </div>
+                                        </td>
+                                        <th>TỔNG</th>
+                                        <td id="subtotal_@item.Id">
+                                            @(((item.Price + (item.PropertyProduct != null ? item.PropertyProduct.Price : 0m) + (item.Options != null ? item.Options.Sum(option => option.Price) : 0m)) * item.Quantity).ToString("N0"))đ
+                                        </td>
+                                        <td class="product-remove">
+                                            <button class="remove" data-item-cart-id="@item.Id" aria-label="Xóa @item.ProductName khỏi giỏ hàng">×</button>
+                                        </td>
+                                    </tr>
+                                    }
+                                </tbody>
+                        </table>
+                        <div class="product-cart-detail">
+
+                            <a href="#" class="clear btn-medium btn-danger">Xóa Giỏ Hàng</a>
+
+                        </div>
+                    </div>
+                    <div class="cart-total wow fadeInDown" data-wow-duration="1000ms" data-wow-delay="900ms">
+                        <div class="cart-total-title">
+                            <h5>TỔNG CỘNG</h5>
+                        </div>
+
+                        <div class="grand-total">
+                            <h5>TỔNG CỘNG: <span id="cart-grand-total">@Model.Sum(item => (item.Price + (item.PropertyProduct != null ? item.PropertyProduct.Price : 0m) + (item.Options != null ? item.Options.Sum(option => option.Price) : 0m)) * item.Quantity).ToString("N0")đ</span></h5>
+                        </div>
+                        <div class="proceed-check">
+                            <a href="@Url.Action("CheckOut","Order")" class="btn-primary-gold btn-medium">THANH TOÁN</a>
+                        </div>
+                    </div>
+                    }
+                </div>
+            </section>
+
+        </div>
+</main>
+<script type="text/javascript">
+    var cartUpdating = false;
+
+    function changeQuantity(itemId, change) {
+        if (cartUpdating) return;
+        var input = $("#quantity_" + itemId);
+        var current = Number(input.val());
+        var quantity = Math.max(1, (Number.isInteger(current) ? current : 1) + change);
+        if (quantity === Number(input.attr("data-quantity"))) return;
+        input.val(quantity);
+        updateCart(itemId);
+    }
+
+    function plusQuantity(itemId) {
+        changeQuantity(itemId, 1);
+    }
+
+    function minusQuantity(itemId) {
+        changeQuantity(itemId, -1);
+    }
+
+    function updateCart(itemId) {
+        var input = $("#quantity_" + itemId);
+        var previousQuantity = input.attr("data-quantity");
+        if (cartUpdating) {
+            input.val(previousQuantity);
+            return;
+        }
+        var quantity = Number(input.val());
+        if (!Number.isInteger(quantity) || quantity < 1 || quantity > 2147483647) {
+            input.val(previousQuantity);
+            $("#cart-update-error").text("Vui lòng nhập số lượng nguyên từ 1 đến 2147483647.");
+            return;
+        }
+
+        cartUpdating = true;
+        var controls = $('.price-textbox input, .remove, .clear');
+        controls.prop("disabled", true).attr("aria-disabled", "true");
+        $("#cart-update-error").text("");
+        $.ajax({
+            type: "POST",
+            url: '@Url.Action("UpdateCart", "Cart")',
+            data: { itemId: itemId, quantity: quantity },
+            dataType: "json",
+            success: function (result) {
+                if (!result.success) {
+                    input.val(previousQuantity);
+                    $("#cart-update-error").text(result.message || "Không thể cập nhật giỏ hàng.");
+                    return;
+                }
+                input.val(result.quantity).attr("data-quantity", result.quantity);
+                $("#subtotal_" + itemId).text(result.subtotal);
+                $("#cart-grand-total").text(result.total);
+                $("#totalCart").text(result.totalQuantity);
+            },
+            error: function () {
+                input.val(previousQuantity);
+                $("#cart-update-error").text("Không thể cập nhật giỏ hàng. Vui lòng thử lại.");
+            },
+            complete: function () {
+                cartUpdating = false;
+                controls.prop("disabled", false).removeAttr("aria-disabled");
+            }
+        });
+    }
+</script>
