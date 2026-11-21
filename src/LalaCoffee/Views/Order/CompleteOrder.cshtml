@@ -1,0 +1,31 @@
+
+@{
+    Page.Title = "Đặt hàng thành công";
+    Layout = "~/Views/Shared/_Layout_User.cshtml";
+    string orderCode = (ViewBag.OrderCode as string) ?? (Session?["orderCode"] as string);
+}
+
+<main>
+    <div class="main-part">
+
+        <section class="default-section shop-checkout bg-grey">
+            <div class="container">
+                <div class="checkout-wrap wow fadeInDown" data-wow-duration="1000ms" data-wow-delay="300ms">
+                    <ul class="checkout-bar">
+                        <li class="done-proceed">Shopping Cart</li>
+                        <li class="done-proceed">Checkout</li>
+                        <li class="active">Order Complete</li>
+                    </ul>
+                </div>
+                <div class="text-center py-4">
+                    <h3 class="mb-3 text-success">
+                        <i class="fa fa-check-circle me-2"></i>Bạn đã đặt hàng thành công!
+                    </h3>
+                    <p>Cảm ơn bạn vì giữa muôn vàn sự lựa chọn đã chọn <b>LalaCoffee</b></p>
+                    <p class="mt-2">Xem chi tiết đơn đặt hàng của bạn <a href="@(!string.IsNullOrWhiteSpace(orderCode) ? Url.Action("SearchOrder", "Order", new { id = orderCode }) : Url.Action("SearchOrder", "Order"))" class="fw-bold text-decoration-underline text-primary">tại đây</a></p>
+                </div>
+            </div>
+        </section>
+
+    </div>
+</main>  

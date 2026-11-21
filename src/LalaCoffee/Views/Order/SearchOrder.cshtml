@@ -1,0 +1,98 @@
+﻿@model LalaCoffee.Models.Order
+@{
+    Page.Title = "Tra cứu đơn hàng";
+    Layout = "~/Views/Shared/_Layout_User.cshtml";
+    var orderDetails = ViewBag.OrderDetails as IEnumerable<LalaCoffee.Models.OrderDetail> ?? Enumerable.Empty<LalaCoffee.Models.OrderDetail>();
+}
+<main>
+    <div class="main-part">
+        <section class="default-section bg-grey order-lookup">
+            <div class="container">
+                <div class="order-lookup-heading">
+                    <h1>Tra cứu đơn hàng</h1>
+                    <p>Theo dõi thông tin và trạng thái đơn hàng của bạn.</p>
+                </div>
+
+                @if (Model != null)
+                {
+                    <div class="order-lookup-card">
+                        <div class="order-lookup-card-heading">
+                            <div>
+                                <h2>Thông tin đơn hàng</h2>
+                                <p>Mã đơn hàng: <strong>@Model.Code</strong></p>
+                            </div>
+                            <span class="order-lookup-status">@LalaCoffee.Models.OrderStatus.NormalizeStatus(Model.Status)</span>
+                        </div>
+                        <div class="order-lookup-info">
+                            <div>
+                                <h3>Thông tin nhận hàng</h3>
+                                <dl class="order-lookup-fields">
+                                    <dt>Người nhận</dt><dd>@Model.Name</dd>
+                                    <dt>Số điện thoại</dt><dd>@Model.PhoneNumber</dd>
+                                    <dt>Địa chỉ</dt><dd>@Model.Address</dd>
+                                    <dt>Ghi chú</dt><dd class="order-lookup-note">@(string.IsNullOrWhiteSpace(Model.Note) ? "Không có ghi chú" : Model.Note)</dd>
+                                </dl>
+                            </div>
+                            <div>
+                                <h3>Thông tin thanh toán</h3>
+                                <dl class="order-lookup-fields">
+                                    <dt>Phương thức</dt><dd>@Model.Payment</dd>
+                                    <dt>Thanh toán</dt><dd class="@(Model.Paid == 1 ? "text-success" : "text-danger")">@(Model.Paid == 1 ? "Đã thanh toán" : "Chưa thanh toán")</dd>
+                                    <dt>Ngày đặt</dt><dd>@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</dd>
+                                    <dt>Tổng tiền</dt><dd class="order-lookup-total">@Model.Total.ToString("N0")đ</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="order-lookup-card">
+                        <div class="order-lookup-card-heading"><h2>Chi tiết món đã đặt</h2></div>
+                        <div class="order-lookup-table-wrap" role="region" aria-label="Chi tiết món đã đặt" tabindex="0">
+                            <table class="table order-lookup-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Tên sản phẩm</th>
+                                        <th scope="col" class="order-lookup-number">Đơn giá</th>
+                                        <th scope="col" class="order-lookup-number">Số lượng</th>
+                                        <th scope="col">Size / Phục vụ</th>
+                                        <th scope="col">Topping</th>
+                                        <th scope="col" class="order-lookup-number">Thành tiền</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var detail in orderDetails)
+                                    {
+                                        <tr>
+                                            <td>@detail.ProductName</td>
+                                            <td class="order-lookup-number">@detail.Price.ToString("N0")đ</td>
+                                            <td class="order-lookup-number">@detail.Quantity</td>
+                                            <td>@(string.IsNullOrWhiteSpace(detail.PropertyProduct) ? "-" : detail.PropertyProduct)</td>
+                                            <td>@(string.IsNullOrWhiteSpace(detail.OptionProduct) ? "-" : detail.OptionProduct)</td>
+                                            <td class="order-lookup-number"><strong>@detail.Total.ToString("N0")đ</strong></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th scope="row" colspan="5">Tổng cộng</th>
+                                        <td class="order-lookup-number order-lookup-total">@Model.Total.ToString("N0")đ</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="order-lookup-card order-lookup-empty">
+                        <h2>Không tìm thấy đơn hàng</h2>
+                        <p>Mã đơn hàng không hợp lệ hoặc không tồn tại. Vui lòng kiểm tra lại đường dẫn đơn hàng của bạn.</p>
+                    </div>
+                }
+                <div class="order-lookup-actions">
+                    <a href="@Url.Content("~/Collections/All")" class="button-default">Tiếp tục chọn món</a>
+                    <a href="@Url.Action("Index", "Home")">Trở về trang chủ</a>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
