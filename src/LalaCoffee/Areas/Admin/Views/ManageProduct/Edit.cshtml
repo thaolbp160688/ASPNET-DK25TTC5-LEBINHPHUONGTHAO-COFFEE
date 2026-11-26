@@ -1,0 +1,187 @@
+@model LalaCoffee.Models.Product
+
+@{
+    ViewBag.Title = "Chỉnh sửa sản phẩm";
+    Layout = "~/Views/Shared/_Layout_Admin.cshtml";
+    bool isActive = Model.Status == "1" 
+        || string.Equals(Model.Status, "Show", StringComparison.OrdinalIgnoreCase) 
+        || string.Equals(Model.Status, "Active", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Model.Status, "True", StringComparison.OrdinalIgnoreCase);
+}
+@{
+    var fieldErrors = (ViewBag.FieldErrors ?? TempData["FieldErrors"]) as Dictionary<string, string> ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    string priceVal = ViewBag.PriceInput != null ? (string)ViewBag.PriceInput : Model.Price.ToString("0", System.Globalization.CultureInfo.InvariantCulture);
+}
+@Html.Partial("ErrorsAlert")
+
+<div class="admin-page-header">
+    <div>
+        <h1 class="admin-page-title">Chỉnh sửa sản phẩm</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb admin-breadcrumb">
+                <li class="breadcrumb-item"><a href="/Admin/ManageOrder" class="text-decoration-none text-muted">Quản trị</a></li>
+                <li class="breadcrumb-item"><a href="/Admin/ManageProduct" class="text-decoration-none text-muted">Sản phẩm</a></li>
+                <li class="breadcrumb-item active" aria-current="page">@Model.Name</li>
+            </ol>
+        </nav>
+    </div>
+    <a href="@Url.Action("Index", "ManageProduct")" class="btn btn-outline-secondary d-inline-flex align-items-center gap-2">
+        <i class="fas fa-arrow-left"></i>
+        <span>Quay lại danh sách</span>
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-12 col-lg-8">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-edit me-2"></i> Thông tin sản phẩm: <strong>@Model.Name</strong>
+                </h5>
+            </div>
+            @using (Html.BeginForm("Edit", "ManageProduct", FormMethod.Post, new { enctype = "multipart/form-data" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(model => model.Id)
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="name">Tên sản phẩm <span class="text-danger">*</span></label>
+                        <input class="form-control @(fieldErrors.ContainsKey("name") ? "is-invalid" : "")" id="name" name="name" type="text" value="@Model.Name" onchange="getSlug()">
+                        @if (fieldErrors.ContainsKey("name"))
+                        {
+                            <span class="invalid-feedback d-block">@fieldErrors["name"]</span>
+                        }
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="slug">Đường dẫn thân thiện (Slug) <span class="text-danger">*</span></label>
+                        <input class="form-control @(fieldErrors.ContainsKey("slug") ? "is-invalid" : "")" id="slug" name="slug" type="text" value="@Model.Slug">
+                        @if (fieldErrors.ContainsKey("slug"))
+                        {
+                            <span class="invalid-feedback d-block">@fieldErrors["slug"]</span>
+                        }
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="description">Mô tả sản phẩm <span class="text-danger">*</span></label>
+                        <textarea class="form-control @(fieldErrors.ContainsKey("description") ? "is-invalid" : "")" id="description" name="description" rows="4">@Model.Description</textarea>
+                        @if (fieldErrors.ContainsKey("description"))
+                        {
+                            <span class="invalid-feedback d-block">@fieldErrors["description"]</span>
+                        }
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="price">Giá bán (VNĐ) <span class="text-danger">*</span></label>
+                            <input class="form-control @(fieldErrors.ContainsKey("price") ? "is-invalid" : "")" id="price" name="price" type="number" min="1000" step="1000" value="@priceVal">
+                            @if (fieldErrors.ContainsKey("price"))
+                            {
+                                <span class="invalid-feedback d-block">@fieldErrors["price"]</span>
+                            }
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="category_id">Danh mục sản phẩm <span class="text-danger">*</span></label>
+                            <select class="form-select @(fieldErrors.ContainsKey("category_id") ? "is-invalid" : "")" name="category_id" id="category_id">
+                                @foreach (var category in ViewBag.Categories)
+                                {
+                                    <option value="@category.Id" @(Model.Category != null && Model.Category.Id == category.Id ? "selected" : "")>@category.Name</option>
+                                }
+                            </select>
+                            @if (fieldErrors.ContainsKey("category_id"))
+                            {
+                                <span class="invalid-feedback d-block">@fieldErrors["category_id"]</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="image">Ảnh sản phẩm</label>
+                        <div class="input-group mb-2">
+                            <input class="form-control @(fieldErrors.ContainsKey("image") ? "is-invalid" : "")" id="image" name="image" type="text" value="@Model.Image" placeholder="Đường dẫn ảnh hoặc chọn tệp bên dưới...">
+                            <button type="button" id="btnUpload" class="btn btn-outline-secondary">
+                                <i class="fas fa-folder-open me-1"></i> Chọn tệp ảnh
+                            </button>
+                        </div>
+                        @if (fieldErrors.ContainsKey("image"))
+                        {
+                            <span class="invalid-feedback d-block mb-2">@fieldErrors["image"]</span>
+                        }
+                        <input type="file" name="fileUpload" id="fileUpload" accept="image/*" class="d-none" aria-label="Tải lên tệp ảnh sản phẩm">
+                        <div class="text-muted small mb-2">Chấp nhận JPG, JPEG, PNG, WEBP, GIF (tối đa 5MB).</div>
+                        <div class="p-3 bg-light rounded-3 text-center border" id="previewContainer">
+                            <img id="pictureUpload" src="@(string.IsNullOrEmpty(Model.Image) ? "/Content/Layout/User/images/coffee.png" : Model.Image)" style="max-height: 180px; width: auto; object-fit: contain; border-radius: 8px;" alt="Xem trước ảnh sản phẩm" />
+                        </div>
+                    </div>
+                    <div class="form-check form-switch mt-3 mb-2">
+                        <input class="form-check-input" type="checkbox" role="switch" name="status" id="status" value="1" @(isActive ? "checked" : "")>
+                        <label class="form-check-label fw-semibold" for="status">Cho phép hiển thị sản phẩm trên cửa hàng</label>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-top py-3 d-flex justify-content-between align-items-center">
+                    <a href="@Url.Action("Index", "ManageProduct")" class="btn btn-outline-secondary">Hủy bỏ</a>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="fas fa-save me-1"></i> Lưu thay đổi
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function removeDiacritics(str) {
+        str = str.replace(/Đ/g, "D");
+        str = str.replace(/đ/g, "d");
+        str = str.replace(/ /g, "-");
+        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }
+    function getSlug() {
+        var name = $('#name').val();
+        var result = removeDiacritics(name);
+        $('#slug').val(result.toLowerCase());
+    }
+    $(function () {
+        $('#btnUpload').click(function () {
+            $('#fileUpload').trigger('click');
+        });
+
+        $('#fileUpload').change(function () {
+            if (window.FormData !== undefined) {
+                var fileUpload = $('#fileUpload').get(0);
+                var files = fileUpload.files;
+                if (!files || files.length === 0) return;
+
+                var formData = new FormData();
+                formData.append('file', files[0]);
+                formData.append('__RequestVerificationToken', $('input[name="__RequestVerificationToken"]').val());
+
+                var $btn = $('#btnUpload');
+                var originalHtml = $btn.html();
+                $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Đang tải...');
+
+                $.ajax({
+                    type: 'POST',
+                    url: '@Url.Action("ProcessUpload", "Image", new { area = "" })',
+                    contentType: false,
+                    processData: false,
+                    data: formData,
+                    success: function (urlImage) {
+                        $('#pictureUpload').attr('src', urlImage);
+                        $('#image').val(urlImage);
+                    },
+                    error: function (xhr) {
+                        var msg = xhr.statusDescription || xhr.responseText || xhr.statusText || 'Không thể tải lên ảnh.';
+                        alert('Lỗi upload: ' + msg);
+                    },
+                    complete: function () {
+                        $btn.prop('disabled', false).html(originalHtml);
+                    }
+                });
+            }
+        });
+
+        $('#image').on('input change', function () {
+            var url = $(this).val();
+            if (url && url.trim().length > 0) {
+                $('#pictureUpload').attr('src', url.trim());
+            }
+        });
+    });
+</script>

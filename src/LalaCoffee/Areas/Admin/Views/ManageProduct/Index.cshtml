@@ -1,0 +1,364 @@
+@model IEnumerable<LalaCoffee.Models.Product>
+@{
+    ViewBag.Title = "Quản lý sản phẩm";
+    Layout = "~/Views/Shared/_Layout_Admin.cshtml";
+}
+@functions{
+    public static bool IsActive(string active)
+    {
+        if (string.IsNullOrWhiteSpace(active)) return false;
+        return active == "1" 
+            || string.Equals(active, "Show", StringComparison.OrdinalIgnoreCase) 
+            || string.Equals(active, "Active", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(active, "True", StringComparison.OrdinalIgnoreCase);
+    }
+    public string NorActive(string active = "1")
+    {
+        return IsActive(active) 
+            ? "<span class='badge bg-success-subtle text-success border border-success-subtle px-2 py-1'>Hiển thị</span>" 
+            : "<span class='badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1'>Tạm ẩn</span>";
+    }
+}
+@{
+    var fieldErrors = (TempData["FieldErrors"] ?? ViewBag.FieldErrors) as Dictionary<string, string> ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    var formValues = (TempData["FormValues"] ?? ViewBag.FormValues) as Dictionary<string, string> ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    string openModal = TempData["OpenModal"] as string;
+    bool isCreateActive = !formValues.ContainsKey("status") || formValues["status"] == "1";
+    string selectedCategory = formValues.ContainsKey("category_id") ? formValues["category_id"] : "0";
+}
+@Html.Partial("ErrorsAlert")
+
+<div class="admin-page-header">
+    <div>
+        <h1 class="admin-page-title">Quản lý Sản phẩm</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb admin-breadcrumb">
+                <li class="breadcrumb-item"><a href="/Admin/ManageOrder" class="text-decoration-none text-muted">Quản trị</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Danh sách sản phẩm</li>
+            </ol>
+        </nav>
+    </div>
+    <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#create_modal">
+        <i class="fas fa-plus-circle"></i>
+        <span>Thêm sản phẩm mới</span>
+    </button>
+</div>
+
+<!-- Modal Thêm sản phẩm -->
+<div class="modal fade" id="create_modal" tabindex="-1" aria-labelledby="createModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            @using (Html.BeginForm("Create", "ManageProduct", FormMethod.Post, new { enctype = "multipart/form-data" }))
+            {
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createModalLabel">
+                        <i class="fas fa-plus-circle text-primary me-2"></i>Thêm sản phẩm mới
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="name">Tên sản phẩm <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control @(fieldErrors.ContainsKey("name") ? "is-invalid" : "")" name="name" id="name" placeholder="VD: Cà phê Muối..." value="@(formValues.ContainsKey("name") ? formValues["name"] : "")" onchange="getSlug();">
+                        @if (fieldErrors.ContainsKey("name"))
+                        {
+                            <span class="invalid-feedback d-block">@fieldErrors["name"]</span>
+                        }
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="slug">Đường dẫn thân thiện (Slug) <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control @(fieldErrors.ContainsKey("slug") ? "is-invalid" : "")" name="slug" id="slug" placeholder="VD: ca-phe-muoi" value="@(formValues.ContainsKey("slug") ? formValues["slug"] : "")">
+                        @if (fieldErrors.ContainsKey("slug"))
+                        {
+                            <span class="invalid-feedback d-block">@fieldErrors["slug"]</span>
+                        }
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="description">Mô tả sản phẩm <span class="text-danger">*</span></label>
+                        <textarea rows="4" class="form-control @(fieldErrors.ContainsKey("description") ? "is-invalid" : "")" name="description" id="description" placeholder="Mô tả hương vị, nguyên liệu...">@(formValues.ContainsKey("description") ? formValues["description"] : "")</textarea>
+                        @if (fieldErrors.ContainsKey("description"))
+                        {
+                            <span class="invalid-feedback d-block">@fieldErrors["description"]</span>
+                        }
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="price">Giá bán (VNĐ) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control @(fieldErrors.ContainsKey("price") ? "is-invalid" : "")" name="price" id="price" min="1000" step="1000" placeholder="VD: 35000" value="@(formValues.ContainsKey("price") ? formValues["price"] : "10000")">
+                            @if (fieldErrors.ContainsKey("price"))
+                            {
+                                <span class="invalid-feedback d-block">@fieldErrors["price"]</span>
+                            }
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label" for="category_id">Danh mục sản phẩm <span class="text-danger">*</span></label>
+                            <select class="form-select @(fieldErrors.ContainsKey("category_id") ? "is-invalid" : "")" name="category_id" id="category_id">
+                                <option value="0">-- Chọn danh mục --</option>
+                                @foreach (var category in ViewBag.Categories)
+                                {
+                                    <option value="@category.Id" @(selectedCategory == category.Id.ToString() ? "selected" : "")>@category.Name</option>
+                                }
+                            </select>
+                            @if (fieldErrors.ContainsKey("category_id"))
+                            {
+                                <span class="invalid-feedback d-block">@fieldErrors["category_id"]</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="image">Ảnh sản phẩm</label>
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control @(fieldErrors.ContainsKey("image") ? "is-invalid" : "")" name="image" id="image" placeholder="Đường dẫn ảnh hoặc chọn tệp bên dưới..." value="@(formValues.ContainsKey("image") ? formValues["image"] : "")">
+                            <button type="button" id="btnUpload" class="btn btn-outline-secondary">
+                                <i class="fas fa-folder-open me-1"></i> Chọn tệp ảnh
+                            </button>
+                        </div>
+                        @if (fieldErrors.ContainsKey("image"))
+                        {
+                            <span class="invalid-feedback d-block mb-2">@fieldErrors["image"]</span>
+                        }
+                        <input type="file" name="fileUpload" id="fileUpload" accept="image/*" class="d-none" aria-label="Tải lên tệp ảnh sản phẩm">
+                        <div class="text-muted small mb-2">Chấp nhận JPG, JPEG, PNG, WEBP, GIF (tối đa 5MB).</div>
+                        <div class="mt-2 text-center p-2 bg-light rounded border" id="previewContainer" style="@(formValues.ContainsKey("image") && !string.IsNullOrEmpty(formValues["image"]) ? "" : "display:none;")">
+                            <img id="pictureUpload" src="@(formValues.ContainsKey("image") ? formValues["image"] : "")" class="img-fluid rounded" style="max-height: 180px; object-fit: contain;" alt="Xem trước ảnh sản phẩm" />
+                        </div>
+                    </div>
+                    <div class="form-check form-switch mt-3">
+                        <input class="form-check-input" type="checkbox" role="switch" name="status" id="status" value="1" @(isCreateActive ? "checked" : "")>
+                        <label class="form-check-label fw-semibold" for="status">Cho phép hiển thị sản phẩm trên cửa hàng</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Lưu sản phẩm
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Danh sách sản phẩm Table Card -->
+<div class="card border-0 shadow-sm rounded-3">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-coffee me-2"></i> Tất cả sản phẩm
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive p-3">
+            <table class="table table-hover align-middle" id="productTable" data-server-side="true" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th style="width: 90px;">Thao tác</th>
+                        <th style="width: 50px;">ID</th>
+                        <th>Tên sản phẩm</th>
+                        <th>Slug</th>
+                        <th>Giá bán</th>
+                        <th>Hình ảnh</th>
+                        <th>Danh mục</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
+                        <th>Cập nhật</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    var productTable;
+    $(document).ready(function () {
+        productTable = $('#productTable').DataTable({
+            "processing": true,
+            "serverSide": true,
+            "ajax": {
+                "url": "@Url.Action("GetData", "ManageProduct")",
+                "type": "POST",
+                "data": function (d) {
+                    d.__RequestVerificationToken = $('input[name="__RequestVerificationToken"]').val();
+                }
+            },
+            "columns": [
+                {
+                    "data": "id",
+                    "orderable": false,
+                    "searchable": false,
+                    "render": function (data, type, row) {
+                        return '<div class="btn-group btn-group-sm" role="group">' +
+                               '<a href="' + row.editUrl + '" class="btn btn-outline-primary" aria-label="Chỉnh sửa sản phẩm ' + (row.name || '') + '" title="Chỉnh sửa"><i class="fas fa-edit"></i></a>' +
+                               '<button type="button" class="btn btn-outline-danger" onclick="del(\'' + data + '\')" aria-label="Xóa sản phẩm ' + (row.name || '') + '" title="Xóa"><i class="fas fa-trash"></i></button>' +
+                               '</div>';
+                    }
+                },
+                { "data": "id" },
+                {
+                    "data": "name",
+                    "render": function(data) {
+                        return '<strong class="text-dark">' + (data || '') + '</strong>';
+                    }
+                },
+                {
+                    "data": "slug",
+                    "render": function(data) {
+                        return '<span class="text-muted small">/' + (data || '') + '</span>';
+                    }
+                },
+                {
+                    "data": "priceFormatted",
+                    "render": function(data) {
+                        return '<strong class="text-dark">' + data + '</strong>';
+                    }
+                },
+                {
+                    "data": "image",
+                    "orderable": false,
+                    "searchable": false,
+                    "render": function (data, type, row) {
+                        if (data && data.length > 0) {
+                            return '<img src="' + data + '" alt="' + (row.name || 'Sản phẩm') + '" loading="lazy" style="width:48px; height:48px; object-fit:cover; border-radius:8px; border:1px solid #e2e8f0;" />';
+                        }
+                        return '<span class="text-muted small">Không có ảnh</span>';
+                    }
+                },
+                {
+                    "data": "categoryName",
+                    "render": function(data) {
+                        return '<span class="badge bg-light text-dark border">' + (data || 'Chưa gán') + '</span>';
+                    }
+                },
+                {
+                    "data": "statusBadge",
+                    "render": function (data) { return data; }
+                },
+                { "data": "createdAt" },
+                { "data": "updatedAt" }
+            ],
+            "order": [[1, "desc"]],
+            "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
+            "language": {
+                "processing": "Đang tải dữ liệu...",
+                "lengthMenu": "Hiển thị _MENU_ mục",
+                "zeroRecords": "Không tìm thấy dữ liệu",
+                "info": "Hiển thị _START_ - _END_ của _TOTAL_ mục",
+                "infoEmpty": "Hiển thị 0 mục",
+                "infoFiltered": "(lọc từ _MAX_ mục)",
+                "search": "Tìm kiếm:",
+                "paginate": {
+                    "first": "Đầu",
+                    "previous": "Trước",
+                    "next": "Tiếp",
+                    "last": "Cuối"
+                }
+            }
+        });
+    });
+
+    function removeDiacritics(str) {
+        str = str.replace(/Đ/g, "D");
+        str = str.replace(/đ/g, "d");
+        str = str.replace(/ /g, "-");
+        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }
+    function getSlug() {
+        var name = $('#name').val();
+        var result = removeDiacritics(name);
+        $('#slug').val(result.toLowerCase());
+    }
+    function del(id) {
+        if (confirm("Bạn chắc chắn muốn xóa sản phẩm này?")) {
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: "@Url.Action("Delete", "ManageProduct")",
+                type: "POST",
+                data: {
+                    id: id,
+                    __RequestVerificationToken: token
+                },
+                success: function (response) {
+                    if (response.success) {
+                        alert(response.message);
+                        if (productTable) {
+                            productTable.ajax.reload(null, false);
+                        } else {
+                            location.reload();
+                        }
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    alert(error);
+                }
+            });
+        }
+    }
+    @if (!string.IsNullOrEmpty(openModal) && fieldErrors.Count > 0)
+    {
+        <text>
+        $(document).ready(function () {
+            var modalEl = document.getElementById('@openModal');
+            if (modalEl && typeof bootstrap !== 'undefined') {
+                var modal = new bootstrap.Modal(modalEl);
+                modal.show();
+            }
+        });
+        </text>
+    }
+    $(function () {
+        $('#btnUpload').click(function () {
+            $('#fileUpload').trigger('click');
+        });
+
+        $('#fileUpload').change(function () {
+            if (window.FormData !== undefined) {
+                var fileUpload = $('#fileUpload').get(0);
+                var files = fileUpload.files;
+                if (!files || files.length === 0) return;
+
+                var formData = new FormData();
+                formData.append('file', files[0]);
+                formData.append('__RequestVerificationToken', $('input[name="__RequestVerificationToken"]').val());
+
+                var $btn = $('#btnUpload');
+                var originalHtml = $btn.html();
+                $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Đang tải...');
+
+                $.ajax({
+                    type: 'POST',
+                    url: '@Url.Action("ProcessUpload", "Image", new { area = "" })',
+                    contentType: false,
+                    processData: false,
+                    data: formData,
+                    success: function (urlImage) {
+                        $('#pictureUpload').attr('src', urlImage);
+                        $('#previewContainer').show();
+                        $('#image').val(urlImage);
+                    },
+                    error: function (xhr) {
+                        var msg = xhr.statusDescription || xhr.responseText || xhr.statusText || 'Không thể tải lên ảnh.';
+                        alert('Lỗi upload: ' + msg);
+                    },
+                    complete: function () {
+                        $btn.prop('disabled', false).html(originalHtml);
+                    }
+                });
+            }
+        });
+
+        $('#image').on('input change', function () {
+            var url = $(this).val();
+            if (url && url.trim().length > 0) {
+                $('#pictureUpload').attr('src', url.trim());
+                $('#previewContainer').show();
+            } else {
+                $('#previewContainer').hide();
+            }
+        });
+    });
+</script>
