@@ -1,0 +1,169 @@
+@model IEnumerable<LalaCoffee.Models.Order>
+@using LalaCoffee.Models
+
+@{
+    ViewBag.Title = "Quản lý đơn hàng";
+    Layout = "~/Views/Shared/_Layout_Admin.cshtml";
+}
+
+@Html.Partial("ErrorsAlert")
+@Html.AntiForgeryToken()
+
+<div class="admin-page-header">
+    <div>
+        <h1 class="admin-page-title">Quản lý Đơn hàng</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb admin-breadcrumb">
+                <li class="breadcrumb-item"><a href="/Admin/ManageOrder" class="text-decoration-none text-muted">Quản trị</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Danh sách đơn hàng</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-3">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-shopping-bag me-2"></i> Danh sách tất cả đơn hàng
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive p-3">
+            <table class="table table-hover align-middle" id="orderTable" data-server-side="true" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th style="width: 110px;">Thao tác</th>
+                        <th>Mã đơn</th>
+                        <th>Khách hàng</th>
+                        <th>Số điện thoại</th>
+                        <th>Địa chỉ</th>
+                        <th>PTTT</th>
+                        <th>Thanh toán</th>
+                        <th>Ghi chú</th>
+                        <th>Tổng tiền</th>
+                        <th>Trạng thái đơn</th>
+                        <th>Ngày tạo</th>
+                        <th>Cập nhật</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    var orderTable;
+    $(document).ready(function () {
+        orderTable = $('#orderTable').DataTable({
+            "processing": true,
+            "serverSide": true,
+            "ajax": {
+                "url": "@Url.Action("GetData", "ManageOrder")",
+                "type": "POST",
+                "data": function (d) {
+                    d.__RequestVerificationToken = $('input[name="__RequestVerificationToken"]').val();
+                }
+            },
+            "columns": [
+                {
+                    "data": "id",
+                    "orderable": false,
+                    "searchable": false,
+                    "render": function (data, type, row) {
+                        return '<div class="d-inline-flex gap-1">' +
+                               '<a href="' + row.detailUrl + '" class="btn btn-outline-info btn-sm" title="Chi tiết"><i class="fa fa-eye"></i></a> ' +
+                               '<a href="' + row.editUrl + '" class="btn btn-outline-primary btn-sm" title="Cập nhật trạng thái"><i class="fa fa-edit"></i></a> ' +
+                               '<a href="#" class="btn btn-outline-danger btn-sm" onclick="del(\'' + data + '\')" title="Xóa"><i class="fa fa-trash"></i></a>' +
+                               '</div>';
+                    }
+                },
+                {
+                    "data": "code",
+                    "render": function (data) {
+                        return '<strong class="text-dark">' + (data ? data : '') + '</strong>';
+                    }
+                },
+                { "data": "name" },
+                { "data": "phoneNumber" },
+                { "data": "address" },
+                {
+                    "data": "payment",
+                    "render": function (data) {
+                        var pType = (data || 'cash').toLowerCase();
+                        return '<div class="d-flex align-items-center gap-1"><img style="width:20px; height:20px; object-fit:contain;" src="/Content/images/payment/' + pType + '.png" alt="' + (data || '') + '"> <span>' + (data || 'COD') + '</span></div>';
+                    }
+                },
+                {
+                    "data": "paidBadge",
+                    "render": function (data) { return data; }
+                },
+                {
+                    "data": "note",
+                    "render": function (data) {
+                        return data ? '<span class="text-muted small">' + data + '</span>' : '<span class="text-muted">-</span>';
+                    }
+                },
+                {
+                    "data": "totalFormatted",
+                    "render": function (data) {
+                        return '<strong class="text-success">' + data + '</strong>';
+                    }
+                },
+                {
+                    "data": "statusBadge",
+                    "render": function (data) { return data; }
+                },
+                { "data": "createdAt" },
+                { "data": "updatedAt" }
+            ],
+            "order": [[10, "desc"]],
+            "lengthMenu": [[10, 25, 50, 100], [10, 25, 50, 100]],
+            "language": {
+                "processing": "Đang tải dữ liệu...",
+                "lengthMenu": "Hiển thị _MENU_ mục",
+                "zeroRecords": "Không tìm thấy dữ liệu",
+                "info": "Hiển thị _START_ - _END_ của _TOTAL_ mục",
+                "infoEmpty": "Hiển thị 0 mục",
+                "infoFiltered": "(lọc từ _MAX_ mục)",
+                "search": "Tìm kiếm:",
+                "paginate": {
+                    "first": "Đầu",
+                    "previous": "Trước",
+                    "next": "Tiếp",
+                    "last": "Cuối"
+                }
+            }
+        });
+    });
+
+    function del(id) {
+        if (confirm("Bạn chắc chắn muốn xóa đơn hàng này?")) {
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            $.ajax({
+                url: "@Url.Action("Delete", "ManageOrder")",
+                type: "POST",
+                data: {
+                    id: id,
+                    __RequestVerificationToken: token
+                },
+                success: function (response) {
+                    if (response.success) {
+                        alert(response.message);
+                        if (orderTable) {
+                            orderTable.ajax.reload(null, false);
+                        } else {
+                            location.reload();
+                        }
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    alert(error);
+                }
+            });
+        }
+    }
+</script>
