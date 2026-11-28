@@ -1,13 +1,10 @@
 # HỆ THỐNG WEBSITE BÁN CÀ PHÊ GIẢI KHÁT - LALACOFFEE
 
-> **Ghi chú lịch sử Git:** Mã nguồn LalaCoffee đã hoàn thành trước khi được chia thành 10 đợt nhập lên repository.
-> Các commit ghi nhận việc đưa những nhóm file có sẵn vào GitHub, không phải thời điểm phát triển ban đầu.
-> **Bảo mật:** Trước khi xuất bản công khai hoặc triển khai thực tế, đổi ngay mật khẩu tài khoản demo trong cơ sở dữ liệu.
+## Tác giả thực hiện
 
-
-> **Tài liệu hướng dẫn cài đặt, cấu hình và triển khai**  
-> **Nền tảng công nghệ:** C# (.NET Framework 4.8), ASP.NET MVC 5, Entity Framework 6, Microsoft SQL Server.
-
+- **Họ và tên:** Lê Bình Phương Thao
+- **Email:** Lebinhphuongthao@gmail.com
+- **Số điện thoại:** 0819456822
 ---
 
 ## 1. Yêu cầu môi trường &amp; Công cụ
